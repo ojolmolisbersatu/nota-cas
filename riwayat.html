@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Riwayat Member | Nota Charge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="bolt">⚡</span> Riwayat Member</div>
+  <button class="logout" onclick="logout()">Keluar</button>
+</div>
+
+<div class="stage">
+
+  <!-- ===== SEARCH VIEW ===== -->
+  <div id="view-search">
+    <div class="field member-search-box">
+      <label for="input-search">Cari ID / Nama Member</label>
+      <input id="input-search" type="text" placeholder="Ketik nama atau ID member...">
+      <div id="member-results" class="member-results"></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="location.href='kasir.html'">← Kembali ke Kasir</button>
+    </div>
+  </div>
+
+  <!-- ===== DETAIL VIEW ===== -->
+  <div id="view-detail" class="hidden">
+    <div class="summary-card">
+      <div class="biz-row" style="margin-bottom:14px;">
+        <div class="biz-name" id="d-member-name" style="cursor:default; font-size:17px;">—</div>
+        <div class="biz-sub" id="d-member-id">—</div>
+      </div>
+      <div class="summary-grid">
+        <div>
+          <div class="s-label">Total Transaksi</div>
+          <div class="s-value" id="d-count">0</div>
+        </div>
+        <div>
+          <div class="s-label">Total Pemakaian</div>
+          <div class="s-value" id="d-kwh">0 kWh</div>
+        </div>
+        <div>
+          <div class="s-label">Total Biaya Jasa</div>
+          <div class="s-value" id="d-total">Rp 0</div>
+        </div>
+        <div>
+          <div class="s-label">Charge Terakhir</div>
+          <div class="s-value" id="d-last">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="history-list" class="history-list"></div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" id="btn-back-search">← Cari Member Lain</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/riwayat.js"></script>
+</body>
+</html>

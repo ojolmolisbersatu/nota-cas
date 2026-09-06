@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Nota Biaya Jasa Charge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="bolt">⚡</span> Kasir Nota Biaya Jasa Charge</div>
+  <button class="logout" onclick="logout()">Keluar</button>
+</div>
+
+<div class="stage">
+
+  <!-- ===== FORM VIEW ===== -->
+  <div id="view-form">
+    <div class="receipt">
+      <div class="biz-row">
+        <input id="biz-name" class="biz-name" placeholder="Nama Usaha" maxlength="40">
+        <div class="biz-sub">Nota Biaya Jasa Charge</div>
+      </div>
+
+      <hr class="dashed">
+
+      <div class="meta-row">
+        <span>No. Nota <b id="preview-nota">— akan dibuat saat simpan —</b></span>
+        <span id="preview-datetime">—</span>
+      </div>
+
+      <hr class="dashed">
+
+      <div class="field member-search-box">
+        <label for="input-search">ID / Nama Pelanggan (member)</label>
+        <input id="input-search" type="text" placeholder="Ketik nama atau ID member...">
+        <div id="member-results" class="member-results"></div>
+        <div id="picked-member-box"></div>
+      </div>
+
+      <div class="field">
+        <label for="input-kwh">Jumlah Pemakaian (kWh)</label>
+        <input id="input-kwh" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
+      </div>
+
+      <div class="field rate-field">
+        <div style="flex:1">
+          <label for="input-rate">Tarif Jasa (per kWh terpakai)</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="rate-prefix">Rp</span>
+            <input id="input-rate" type="number" inputmode="numeric" step="1" min="0" value="2000">
+          </div>
+        </div>
+      </div>
+
+      <hr class="dashed">
+
+      <div class="total-block">
+        <div class="total-label">Total Biaya Jasa</div>
+        <div class="total-figure" id="preview-total">Rp 0</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-create">Buat Nota</button>
+      <button class="btn btn-ghost" id="btn-open-history">Cari Riwayat Member</button>
+    </div>
+  </div>
+
+  <!-- ===== RECEIPT (FINAL) VIEW ===== -->
+  <div id="view-receipt" class="hidden">
+    <div class="receipt">
+      <div class="biz-row">
+        <div class="biz-name" id="r-biz-name" style="cursor:default;">Nama Usaha</div>
+        <div class="biz-sub">Nota Biaya Jasa Charge</div>
+      </div>
+
+      <hr class="dashed">
+
+      <div class="meta-row">
+        <span>No. Nota <b id="r-nota">#0001</b></span>
+        <span id="r-datetime">—</span>
+      </div>
+
+      <hr class="dashed">
+
+      <div class="row-view"><span class="k">ID / Nama</span><span class="v" id="r-customer">—</span></div>
+      <div class="row-view"><span class="k">Pemakaian</span><span class="v" id="r-kwh">0 kWh</span></div>
+      <div class="row-view"><span class="k">Tarif Jasa</span><span class="v" id="r-rate">Rp 0</span></div>
+
+      <hr class="dashed">
+
+      <div class="total-block">
+        <div class="total-label">Total Biaya Jasa</div>
+        <div class="total-figure" id="r-total">Rp 0</div>
+      </div>
+
+      <div class="footer-note">Terima kasih sudah charge di sini ⚡</div>
+    </div>
+
+    <div class="actions row2">
+      <button class="btn btn-primary" id="btn-share">Bagikan</button>
+      <button class="btn btn-ghost" id="btn-new">Transaksi Baru</button>
+    </div>
+    <div class="actions">
+      <button class="btn btn-text" id="btn-view-member-history">Lihat Riwayat Member Ini</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/kasir.js"></script>
+</body>
+</html>
