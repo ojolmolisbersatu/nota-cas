@@ -37,7 +37,6 @@ create policy "Admin can insert charge_transactions"
   to authenticated
   with check (
     (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
-    and created_by = auth.uid()
   );
 
 -- Catatan:
