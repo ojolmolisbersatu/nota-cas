@@ -1,50 +1,137 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kasir Nota</title>
-  <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto; }
-    .container { border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
-    .field { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; font-weight: bold; }
-    input { width: 100%; padding: 8px; box-sizing: border-box; }
-    button { padding: 10px 15px; cursor: pointer; border: none; border-radius: 4px; }
-    .btn-submit { background-color: #007bff; color: white; width: 100%; }
-    #area-nota { margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 15px; }
-    #qrcode { display: flex; justify-content: center; margin: 15px 0; }
-  </style>
-
-  <!-- Panggil library QR lokal agar offline & tidak error CDN -->
-  <script src="js/qrcode.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Nota Biaya Jasa Charge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="container">
-    <h2>Aplikasi Kasir</h2>
 
-    <form id="form-kasir">
-      <div class="field">
-        <label for="total-bayar">Total Pembayaran (Rp):</label>
-        <input type="number" id="total-bayar" placeholder="Masukkan total bayar" required min="1">
+<div class="topbar">
+  <div class="brand"><span class="bolt">⚡</span> Kasir Nota Biaya Jasa Charge</div>
+  <button class="logout" onclick="logout()">Keluar</button>
+</div>
+
+<div class="stage">
+
+  <!-- ===== FORM VIEW ===== -->
+  <div id="view-form">
+    <div class="receipt">
+      <div class="biz-row">
+        <input id="biz-name" class="biz-name" placeholder="Nama Usaha" maxlength="40">
+        <div class="biz-sub">Nota Biaya Jasa Charge</div>
       </div>
-      <button type="submit" class="btn-submit">Simpan Nota & Buat QRIS</button>
-    </form>
 
-    <div id="area-nota" style="display: none;">
-      <h3>Nota Pembayaran</h3>
-      <p id="nota-id"></p>
-      <p id="nota-total"></p>
-      
-      <div id="qrcode"></div>
+      <hr class="dashed">
 
-      <button id="btn-bagikan" style="background-color: #25D366; color: white; width: 100%;">
-        Bagikan Nota
-      </button>
+      <div class="meta-row">
+        <span>No. Nota <b id="preview-nota">— akan dibuat saat simpan —</b></span>
+        <span id="preview-datetime">—</span>
+      </div>
+
+      <hr class="dashed">
+
+      <div class="field member-search-box">
+        <label for="input-search">ID / Nama Pelanggan (member)</label>
+        <input id="input-search" type="text" placeholder="Ketik nama atau ID member...">
+        <div id="member-results" class="member-results"></div>
+        <div id="picked-member-box"></div>
+      </div>
+
+      <div class="field">
+        <label for="input-kwh">Jumlah Pemakaian (kWh)</label>
+        <input id="input-kwh" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
+      </div>
+
+      <div class="field rate-field">
+        <div style="flex:1">
+          <label for="input-rate">Tarif Jasa (per kWh terpakai)</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="rate-prefix">Rp</span>
+            <input id="input-rate" type="number" inputmode="numeric" step="1" min="0" value="2000">
+          </div>
+        </div>
+      </div>
+
+      <hr class="dashed">
+
+      <div class="total-block">
+        <div class="total-label">Total Biaya Jasa</div>
+        <div class="total-figure" id="preview-total">Rp 0</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-create">Buat Nota</button>
+      <button class="btn btn-ghost" id="btn-open-history">Cari Riwayat Member</button>
     </div>
   </div>
 
-  <script src="js/qris.js"></script>
-  <script src="js/kasir.js"></script>
+  <!-- ===== RECEIPT (FINAL) VIEW ===== -->
+  <div id="view-receipt" class="hidden">
+    <div class="receipt">
+      <div class="biz-row">
+        <div class="biz-name" id="r-biz-name" style="cursor:default;">Nama Usaha</div>
+        <div class="biz-sub">Nota Biaya Jasa Charge</div>
+      </div>
+
+      <hr class="dashed">
+
+      <div class="meta-row">
+        <span>No. Nota <b id="r-nota">#0001</b></span>
+        <span id="r-datetime">—</span>
+      </div>
+
+      <hr class="dashed">
+
+      <div class="row-view"><span class="k">ID / Nama</span><span class="v" id="r-customer">—</span></div>
+      <div class="row-view"><span class="k">Pemakaian</span><span class="v" id="r-kwh">0 kWh</span></div>
+      <div class="row-view"><span class="k">Tarif Jasa</span><span class="v" id="r-rate">Rp 0</span></div>
+
+      <hr class="dashed">
+
+      <div class="total-block">
+        <div class="total-label">Total Biaya Jasa</div>
+        <div class="total-figure" id="r-total">Rp 0</div>
+      </div>
+
+      <div class="footer-note">Terima kasih sudah charge di sini ⚡</div>
+
+      <hr class="dashed">
+
+      <div class="qris-block">
+        <div class="qris-label">Scan QRIS untuk bayar</div>
+        <img src="assets/qris-logo.png" alt="QRIS" class="qris-logo">
+        <canvas id="r-qris-canvas" class="qris-img"></canvas>
+        <div class="qris-merchant">Semilir Semarang</div>
+        <div class="qris-amount" id="r-qris-amount">Rp 0</div>
+      </div>
+    </div>
+
+    <div class="actions row2">
+      <button class="btn btn-primary" id="btn-share">Bagikan</button>
+      <button class="btn btn-ghost" id="btn-new">Transaksi Baru</button>
+    </div>
+    <div class="actions">
+      <button class="btn btn-text" id="btn-view-member-history">Lihat Riwayat Member Ini</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Primary CDNs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/qris.js"></script>
+<script src="js/kasir.js"></script>
 </body>
 </html>
