@@ -196,32 +196,42 @@ $('btn-open-history').addEventListener('click', () => {
   location.href = 'riwayat.html';
 });
 
-function shareText(tx) {
-  return [
-    `⚡ ${tx.business_name || 'Nama Usaha'}`,
-    'Nota Biaya Jasa Charge',
-    padNota(tx.nota_number) + ' · ' + formatDateTime(new Date(tx.created_at)),
-    '',
-    `ID/Nama: ${tx.member_nama} (${tx.member_id})`,
-    `Pemakaian: ${fmtKwh(tx.kwh)}`,
-    `Tarif Jasa: ${rupiah(tx.tarif)}/kWh`,
-    '',
-    `TOTAL BIAYA JASA: ${rupiah(tx.total)}`
-  ].join('\n');
-}
-
 $('btn-share').addEventListener('click', async () => {
   if (!lastTx) return;
-  const text = shareText(lastTx);
-  if (navigator.share) {
-    try { await navigator.share({ title: 'Nota Biaya Jasa Charge', text }); } catch (e) {}
-  } else {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast('Nota disalin ke clipboard');
-    } catch (e) {
-      toast('Gagal membagikan nota');
-    }
+  const btn = $('btn-share');
+  const receiptEl = document.querySelector('#view-receipt .receipt');
+
+  btn.disabled = true;
+  btn.textContent = 'Menyiapkan gambar...';
+
+  try {
+    const canvas = await html2canvas(receiptEl, { backgroundColor: '#FBF8EE', scale: 2, useCORS: true });
+    canvas.toBlob(async (blob) => {
+      btn.disabled = false;
+      btn.textContent = 'Bagikan';
+      if (!blob) { toast('Gagal membuat gambar nota'); return; }
+
+      const fileName = `nota-${padNota(lastTx.nota_number)}.png`;
+      const file = new File([blob], fileName, { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'Nota Biaya Jasa Charge' });
+        } catch (e) { /* dibatalkan pengguna, tidak apa */ }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('Gambar nota tersimpan ke HP');
+      }
+    }, 'image/png');
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Bagikan';
+    toast('Gagal membuat gambar nota');
   }
 });
 
@@ -242,28 +252,3 @@ function toast(msg) {
 
 // ---- guard page ----
 requireAdmin();
-
-// ---- debug: cek status login apa adanya dari sisi client & server ----
-$('btn-debug').addEventListener('click', async () => {
-  const { data: sessionData } = await supabaseClient.auth.getSession();
-  const session = sessionData.session;
-  const clientInfo = session
-    ? `Client (HP):\nEmail: ${session.user.email}\nRole app_metadata: ${session.user.app_metadata?.role || '(kosong)'}\nToken kadaluarsa: ${new Date(session.expires_at * 1000).toLocaleString('id-ID')}`
-    : 'Client (HP): TIDAK ADA SESI LOGIN';
-
-  let serverInfo;
-  try {
-    const { data, error } = await supabaseClient.rpc('debug_jwt');
-    if (error) {
-      serverInfo = `Server: GAGAL memanggil debug_jwt()\nPesan: ${error.message}\n(Kemungkinan file debug-jwt.sql belum dijalankan di Supabase)`;
-    } else {
-      const role = data?.app_metadata?.role || '(tidak ada app_metadata.role)';
-      const postgresRole = data?.role || '(tidak ada)';
-      serverInfo = `Server (Supabase):\nrole postgres: ${postgresRole}\napp_metadata.role: ${role}`;
-    }
-  } catch (e) {
-    serverInfo = `Server: error tak terduga - ${e.message}`;
-  }
-
-  alert(clientInfo + '\n\n' + serverInfo);
-});
