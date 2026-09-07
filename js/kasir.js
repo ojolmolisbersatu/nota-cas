@@ -178,6 +178,26 @@ function renderReceipt(tx) {
   $('r-kwh').textContent = fmtKwh(tx.kwh);
   $('r-rate').textContent = rupiah(tx.tarif);
   $('r-total').textContent = rupiah(tx.total);
+  $('r-qris-amount').textContent = rupiah(tx.total);
+
+  const dynamicPayload = buildDynamicQris(QRIS_STATIC, tx.total);
+  const canvas = $('r-qris-canvas');
+  const qrisBlock = document.querySelector('.qris-block');
+
+  try {
+    if (typeof QRCode === 'undefined') {
+      throw new Error('Library QRCode belum termuat (cek koneksi/CDN diblokir)');
+    }
+    QRCode.toCanvas(canvas, dynamicPayload, { width: 220, margin: 1 }, (err) => {
+      if (err) {
+        canvas.classList.add('hidden');
+        qrisBlock.insertAdjacentHTML('beforeend', `<div class="qris-error">QR gagal dibuat: ${escapeHtml(err.message || String(err))}</div>`);
+      }
+    });
+  } catch (e) {
+    canvas.classList.add('hidden');
+    qrisBlock.insertAdjacentHTML('beforeend', `<div class="qris-error">QR gagal dibuat: ${escapeHtml(e.message || String(e))}</div>`);
+  }
 }
 
 $('btn-new').addEventListener('click', () => {
