@@ -1,5 +1,5 @@
-// Ganti dengan QRIS Statis merchant kamu
-const BASE_STATIC_QRIS = "00020101021126580014ID.GO.QRIS.WWW01189360091400000000000215ID10200000000000303URE5204581253033605802ID5913MERCHANT NAME6007JAKARTA6105123456304ABCD";
+// QRIS Statis Merchant (Semilir Semarang)
+const BASE_STATIC_QRIS = "00020101021126570011ID.DANA.WWW011893600915303471271802090347127180303UMI51440014ID.CO.QRIS.WWW0215ID10265837741240303UMI5204739453033605802ID5916Semilir Semarang6013Kota Semarang6105501166304285A";
 
 document.getElementById('form-kasir').addEventListener('submit', async function(e) {
   e.preventDefault();
@@ -39,7 +39,7 @@ function setupShareButton(id, amount, payload) {
   btnShare.onclick = async () => {
     const shareData = {
       title: `Nota Pembayaran ${id}`,
-      text: `*NOTA PEMBAYARAN*\nID: ${id}\nTotal: Rp ${amount.toLocaleString('id-ID')}\n\nPayload QRIS:\n${payload}`,
+      text: `*NOTA PEMBAYARAN*\nID: ${id}\nTotal: Rp ${amount.toLocaleString('id-ID')}\n\nScan/Bayar QRIS:\n${payload}`,
     };
 
     if (navigator.share) {
@@ -51,7 +51,6 @@ function setupShareButton(id, amount, payload) {
         }
       }
     } else {
-      // Fallback jika browser/device tidak support navigator.share
       try {
         await navigator.clipboard.writeText(shareData.text);
         alert("Detail nota & payload QRIS berhasil disalin ke clipboard!");
