@@ -3,40 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kasir - Nota Charge</title>
-  <link rel="stylesheet" href="css/style.css">
-  <!-- CDN QRCodeJS yang stabil -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <title>Kasir Nota</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto; }
+    .container { border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
+    .field { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { padding: 10px 15px; cursor: pointer; border: none; border-radius: 4px; }
+    .btn-submit { background-color: #007bff; color: white; width: 100%; }
+    #area-nota { margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 15px; }
+    #qrcode { display: flex; justify-content: center; margin: 15px 0; }
+  </style>
+
+  <!-- Panggil library QR lokal agar offline & tidak error CDN -->
+  <script src="js/qrcode.min.js"></script>
 </head>
 <body>
   <div class="container">
     <h2>Aplikasi Kasir</h2>
 
     <form id="form-kasir">
-      <label for="total-bayar">Total Pembayaran (Rp):</label>
-      <input type="number" id="total-bayar" placeholder="Masukkan total bayar" required min="1">
-      
-      <button type="submit" id="btn-simpan">Simpan Nota & Buat QRIS</button>
+      <div class="field">
+        <label for="total-bayar">Total Pembayaran (Rp):</label>
+        <input type="number" id="total-bayar" placeholder="Masukkan total bayar" required min="1">
+      </div>
+      <button type="submit" class="btn-submit">Simpan Nota & Buat QRIS</button>
     </form>
 
-    <!-- Area Output Hasil Nota & QRIS -->
-    <div id="area-nota" style="display: none; margin-top: 20px; border: 1px solid #ccc; padding: 15px; border-radius: 8px;">
+    <div id="area-nota" style="display: none;">
       <h3>Nota Pembayaran</h3>
       <p id="nota-id"></p>
       <p id="nota-total"></p>
       
-      <div id="qrcode-container" style="margin: 15px 0;">
-        <p><strong>Scan QRIS untuk Membayar:</strong></p>
-        <div id="qrcode"></div>
-      </div>
+      <div id="qrcode"></div>
 
-      <button id="btn-bagikan" style="background-color: #25D366; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
+      <button id="btn-bagikan" style="background-color: #25D366; color: white; width: 100%;">
         Bagikan Nota
       </button>
     </div>
   </div>
 
-  <script src="supabase.js"></script>
   <script src="js/qris.js"></script>
   <script src="js/kasir.js"></script>
 </body>
