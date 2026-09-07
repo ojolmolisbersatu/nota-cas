@@ -1,4 +1,5 @@
-// QRIS Merchant Semilir Semarang
+// File: js/qris.js
+
 const QRIS_STATIC =
   "00020101021126570011ID.DANA.WWW011893600915303471271802090347127180303UMI" +
   "51440014ID.CO.QRIS.WWW0215ID10265837741240303UMI" +
@@ -39,15 +40,17 @@ function crc16ccitt(str) {
 }
 
 function buildDynamicQris(staticQris, amount) {
-  // 1. Parse seluruh Tag TLV & buang CRC lama (Tag 63)
+  // Parse seluruh Tag TLV & buang CRC lama (Tag 63)
   const fields = parseQrisTLV(staticQris).filter((f) => f.tag !== '63');
 
-  // PERHATIAN: Tag 01 TIDAK diubah ke '12'. Tetap '11' (Statis) agar server DANA tidak menolak.
+  // WAJIB UBAH: Tag 01 ke '12' (Dinamis) agar E-Wallet mendeteksi nominal
+  const poiIdx = fields.findIndex((f) => f.tag === '01');
+  if (poiIdx >= 0) fields[poiIdx].value = '12';
 
-  // 2. Hapus Tag 54 lama jika ada
+  // Hapus Tag 54 lama jika kebetulan ada
   const cleanFields = fields.filter((f) => f.tag !== '54');
 
-  // 3. Sisipkan Tag 54 (Nominal) tepat setelah Tag 53 (Mata Uang 360)
+  // Sisipkan Tag 54 (Nominal) tepat setelah Tag 53 (Currency 360)
   const currencyIdx = cleanFields.findIndex((f) => f.tag === '53');
   const amountStr = String(Math.round(amount));
 
@@ -57,7 +60,7 @@ function buildDynamicQris(staticQris, amount) {
     cleanFields.push({ tag: '54', value: amountStr });
   }
 
-  // 4. Susun ulang string & hitung CRC16 baru
+  // Susun ulang string dan hitung Checksum CRC16 yang baru
   let payload = cleanFields.map((f) => tlv(f.tag, f.value)).join('');
   payload += '6304';
   payload += crc16ccitt(payload);
@@ -65,5 +68,6 @@ function buildDynamicQris(staticQris, amount) {
   return payload;
 }
 
+// Pastikan fungsi bisa diakses dari file kasir.js
 window.buildDynamicQris = buildDynamicQris;
 window.QRIS_STATIC = QRIS_STATIC;
