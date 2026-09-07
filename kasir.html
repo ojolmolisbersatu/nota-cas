@@ -51,7 +51,7 @@
           <label for="input-rate">Tarif Jasa (per kWh terpakai)</label>
           <div style="display:flex;align-items:center;gap:6px;">
             <span class="rate-prefix">Rp</span>
-            <input id="input-rate" type="number" inputmode="numeric" step="1" min="0" value="2500">
+            <input id="input-rate" type="number" inputmode="numeric" step="1" min="0" value="2000">
           </div>
         </div>
       </div>
@@ -74,7 +74,7 @@
   <div id="view-receipt" class="hidden">
     <div class="receipt">
       <div class="biz-row">
-        <div class="biz-name" id="r-biz-name" style="cursor:default;">OMB Charge</div>
+        <div class="biz-name" id="r-biz-name" style="cursor:default;">Nama Usaha</div>
         <div class="biz-sub">Nota Biaya Jasa Charge</div>
       </div>
 
@@ -104,7 +104,10 @@
 
       <div class="qris-block">
         <div class="qris-label">Scan QRIS untuk bayar</div>
-        <img src="assets/qris.jpg" alt="QRIS Pembayaran" class="qris-img">
+        <img src="assets/qris-logo.png" alt="QRIS" class="qris-logo">
+        <canvas id="r-qris-canvas" class="qris-img"></canvas>
+        <div class="qris-merchant">Semilir Semarang</div>
+        <div class="qris-amount" id="r-qris-amount">Rp 0</div>
       </div>
     </div>
 
@@ -122,9 +125,11 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/qris.js"></script>
 <script src="js/kasir.js"></script>
 </body>
 </html>
