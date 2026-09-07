@@ -31,7 +31,7 @@ function crc16ccitt(str) {
       if ((crc & 0x8000) !== 0) {
         crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
       } else {
-        crc = (crc << 1) & 0xFFFF;
+        crc = ((crc << 1)) & 0xFFFF;
       }
     }
   }
@@ -39,17 +39,15 @@ function crc16ccitt(str) {
 }
 
 function buildDynamicQris(staticQris, amount) {
-  // 1. Parse seluruh Tag TLV & buang CRC lama (Tag 63)
   const fields = parseQrisTLV(staticQris).filter((f) => f.tag !== '63');
 
-  // 2. WAJIB UBAH Tag 01 ke '12' (Dinamis)
+  // UBAH KE 12 (Dinamis agar nominal terbaca e-wallet)
   const poiIdx = fields.findIndex((f) => f.tag === '01');
   if (poiIdx >= 0) fields[poiIdx].value = '12';
 
-  // 3. Hapus Tag 54 lama jika ada
   const cleanFields = fields.filter((f) => f.tag !== '54');
 
-  // 4. Sisipkan Tag 54 (Nominal) tepat setelah Tag 53 (Mata Uang 360)
+  // Sisipkan Tag 54 tepat setelah Tag 53
   const currencyIdx = cleanFields.findIndex((f) => f.tag === '53');
   const amountStr = String(Math.round(amount));
 
@@ -59,7 +57,6 @@ function buildDynamicQris(staticQris, amount) {
     cleanFields.push({ tag: '54', value: amountStr });
   }
 
-  // 5. Susun ulang string & hitung CRC16 baru
   let payload = cleanFields.map((f) => tlv(f.tag, f.value)).join('');
   payload += '6304';
   payload += crc16ccitt(payload);
