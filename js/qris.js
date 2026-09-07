@@ -42,12 +42,12 @@ function buildDynamicQris(staticQris, amount) {
   // 1. Parse seluruh Tag TLV & buang CRC lama (Tag 63)
   const fields = parseQrisTLV(staticQris).filter((f) => f.tag !== '63');
 
-  // Catatan: Tag 01 TETAP '11' (Statis) agar dikenali oleh server DANA/E-Wallet
-  
+  // PERHATIAN: Tag 01 TIDAK diubah ke '12'. Tetap '11' (Statis) agar server DANA tidak menolak.
+
   // 2. Hapus Tag 54 lama jika ada
   const cleanFields = fields.filter((f) => f.tag !== '54');
 
-  // 3. Sisipkan Tag 54 tepat setelah Tag 53 (Currency 360)
+  // 3. Sisipkan Tag 54 (Nominal) tepat setelah Tag 53 (Mata Uang 360)
   const currencyIdx = cleanFields.findIndex((f) => f.tag === '53');
   const amountStr = String(Math.round(amount));
 
@@ -57,7 +57,7 @@ function buildDynamicQris(staticQris, amount) {
     cleanFields.push({ tag: '54', value: amountStr });
   }
 
-  // 4. Susun kembali string & hitung CRC16 baru
+  // 4. Susun ulang string & hitung CRC16 baru
   let payload = cleanFields.map((f) => tlv(f.tag, f.value)).join('');
   payload += '6304';
   payload += crc16ccitt(payload);
