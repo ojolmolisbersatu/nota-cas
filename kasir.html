@@ -51,7 +51,7 @@
           <label for="input-rate">Tarif Jasa (per kWh terpakai)</label>
           <div style="display:flex;align-items:center;gap:6px;">
             <span class="rate-prefix">Rp</span>
-            <input id="input-rate" type="number" inputmode="numeric" step="1" min="0" value="2000">
+            <input id="input-rate" type="number" inputmode="numeric" step="1" min="0" value="2500">
           </div>
         </div>
       </div>
@@ -67,7 +67,6 @@
     <div class="actions">
       <button class="btn btn-primary" id="btn-create">Buat Nota</button>
       <button class="btn btn-ghost" id="btn-open-history">Cari Riwayat Member</button>
-      <button class="btn btn-text" id="btn-debug">Cek Status Login (debug)</button>
     </div>
   </div>
 
@@ -75,7 +74,7 @@
   <div id="view-receipt" class="hidden">
     <div class="receipt">
       <div class="biz-row">
-        <div class="biz-name" id="r-biz-name" style="cursor:default;">Nama Usaha</div>
+        <div class="biz-name" id="r-biz-name" style="cursor:default;">OMB Charge</div>
         <div class="biz-sub">Nota Biaya Jasa Charge</div>
       </div>
 
@@ -100,6 +99,13 @@
       </div>
 
       <div class="footer-note">Terima kasih sudah charge di sini ⚡</div>
+
+      <hr class="dashed">
+
+      <div class="qris-block">
+        <div class="qris-label">Scan QRIS untuk bayar</div>
+        <img src="assets/qris.jpg" alt="QRIS Pembayaran" class="qris-img">
+      </div>
     </div>
 
     <div class="actions row2">
@@ -115,6 +121,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 <script src="js/auth.js"></script>
