@@ -144,6 +144,11 @@ body{
 .qris-img{width:220px; height:220px; max-width:100%; border-radius:2px;}
 .qris-merchant{font-size:13px; font-weight:700; color:var(--ink); margin-top:8px;}
 .qris-amount{font-family:'Space Mono',monospace; font-size:13px; color:var(--accent-deep); font-weight:700; margin-top:2px;}
+.qris-error{
+  color:var(--danger); font-size:12px; margin-top:10px; padding:10px;
+  border:1.5px dashed var(--danger); border-radius:var(--radius); text-align:left;
+  word-break:break-word;
+}
 
 /* ---- Member search ---- */
 .member-search-box{position:relative;}
