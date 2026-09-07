@@ -1,6 +1,3 @@
-// Variable String QRIS Statis dari Merchant (Semilir Semarang)
-const STATIC_QRIS_SEMILIR = "00020101021126570011ID.DANA.WWW011893600915303471271802090347127180303UMI51440014ID.CO.QRIS.WWW0215ID10265837741240303UMI5204739453033605802ID5916Semilir Semarang6013Kota Semarang6105501166304285A";
-
 /**
  * Generates dynamic QRIS payload from static string base and total amount.
  * @param {string} staticQris - Base static QRIS code from merchant
@@ -56,10 +53,7 @@ function calculateCRC16(str) {
 }
 
 /**
- * Contoh Cara Pemanggilan:
- * const totalBayar = 15000;
- * const qrisDinamisPayload = generateDynamicQRIS(STATIC_QRIS_SEMILIR, totalBayar);
- * renderQRCode("element-id-qr", qrisDinamisPayload);
+ * Render QR Code ke elemen HTML
  */
 function renderQRCode(elementId, text) {
   const container = document.getElementById(elementId);
@@ -68,16 +62,13 @@ function renderQRCode(elementId, text) {
   container.innerHTML = ""; // Clear QR sebelumnya
 
   if (typeof QRCode === "undefined") {
-    alert("Library QRCode belum termuat (cek koneksi/CDN diblokir)");
+    alert("Library QRCode belum termuat!");
     return;
   }
 
   new QRCode(container, {
     text: text,
     width: 200,
-    height: 200,
-    colorDark: "#000000",
-    colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.M
+    height: 200
   });
 }
