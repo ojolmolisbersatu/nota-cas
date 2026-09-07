@@ -178,6 +178,13 @@ function renderReceipt(tx) {
   $('r-kwh').textContent = fmtKwh(tx.kwh);
   $('r-rate').textContent = rupiah(tx.tarif);
   $('r-total').textContent = rupiah(tx.total);
+  $('r-qris-amount').textContent = rupiah(tx.total);
+
+  const dynamicPayload = buildDynamicQris(QRIS_STATIC, tx.total);
+  const canvas = $('r-qris-canvas');
+  QRCode.toCanvas(canvas, dynamicPayload, { width: 220, margin: 1 }, (err) => {
+    if (err) toast('Gagal membuat QR pembayaran');
+  });
 }
 
 $('btn-new').addEventListener('click', () => {
