@@ -24,13 +24,13 @@ bizNameInput.addEventListener('input', () => localStorage.setItem(LS_KEY_NAME, b
 const rateInput = $('input-rate');
 const savedRate = localStorage.getItem(LS_KEY_RATE);
 if (savedRate) rateInput.value = savedRate;
-rateInput.addEventListener('input', () => {
+['input', 'change', 'keyup'].forEach(ev => rateInput.addEventListener(ev, () => {
   localStorage.setItem(LS_KEY_RATE, rateInput.value || '0');
   updatePreview();
-});
+}));
 
 const kwhInput = $('input-kwh');
-kwhInput.addEventListener('input', updatePreview);
+['input', 'change', 'keyup'].forEach(ev => kwhInput.addEventListener(ev, updatePreview));
 
 function currentTotal() {
   const kwh = parseFloat(kwhInput.value) || 0;
@@ -242,3 +242,28 @@ function toast(msg) {
 
 // ---- guard page ----
 requireAdmin();
+
+// ---- debug: cek status login apa adanya dari sisi client & server ----
+$('btn-debug').addEventListener('click', async () => {
+  const { data: sessionData } = await supabaseClient.auth.getSession();
+  const session = sessionData.session;
+  const clientInfo = session
+    ? `Client (HP):\nEmail: ${session.user.email}\nRole app_metadata: ${session.user.app_metadata?.role || '(kosong)'}\nToken kadaluarsa: ${new Date(session.expires_at * 1000).toLocaleString('id-ID')}`
+    : 'Client (HP): TIDAK ADA SESI LOGIN';
+
+  let serverInfo;
+  try {
+    const { data, error } = await supabaseClient.rpc('debug_jwt');
+    if (error) {
+      serverInfo = `Server: GAGAL memanggil debug_jwt()\nPesan: ${error.message}\n(Kemungkinan file debug-jwt.sql belum dijalankan di Supabase)`;
+    } else {
+      const role = data?.app_metadata?.role || '(tidak ada app_metadata.role)';
+      const postgresRole = data?.role || '(tidak ada)';
+      serverInfo = `Server (Supabase):\nrole postgres: ${postgresRole}\napp_metadata.role: ${role}`;
+    }
+  } catch (e) {
+    serverInfo = `Server: error tak terduga - ${e.message}`;
+  }
+
+  alert(clientInfo + '\n\n' + serverInfo);
+});
