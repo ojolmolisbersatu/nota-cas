@@ -1,23 +1,28 @@
-// QRIS Dinamis Merchant: Semilir Semarang (NMID: ID1026583774124)
-// Penyesuaian format TLV EMVCo QRIS Standar Nasional
-
+// QRIS Merchant Semilir Semarang
 const QRIS_STATIC =
   "00020101021126570011ID.DANA.WWW011893600915303471271802090347127180303UMI" +
   "51440014ID.CO.QRIS.WWW0215ID10265837741240303UMI" +
   "5204739453033605802ID5916Semilir Semarang6013Kota Semarang" +
   "6105501166304285A";
 
-/**
- * Format string ke struktur Tag-Length-Value (TLV)
- */
 function tlv(tag, value) {
   const len = String(value.length).padStart(2, '0');
   return tag + len + value;
 }
 
-/**
- * Hitung Checksum CRC16 (CCITT-FALSE) Standar QRIS
- */
+function parseQrisTLV(str) {
+  const fields = [];
+  let i = 0;
+  while (i < str.length) {
+    const tag = str.substr(i, 2);
+    const len = parseInt(str.substr(i + 2, 2), 10);
+    const value = str.substr(i + 4, len);
+    fields.push({ tag, value });
+    i += 4 + len;
+  }
+  return fields;
+}
+
 function crc16ccitt(str) {
   let crc = 0xFFFF;
   for (let i = 0; i < str.length; i++) {
@@ -33,35 +38,33 @@ function crc16ccitt(str) {
   return crc.toString(16).toUpperCase().padStart(4, '0');
 }
 
-/**
- * Membentuk string QRIS Dinamis yang valid
- */
 function buildDynamicQris(staticQris, amount) {
-  // 1. Ubah indikator dari Statis (010211) ke Dinamis (010212)
-  let base = staticQris.replace("010211", "010212");
+  // 1. Parse seluruh Tag TLV & buang CRC lama (Tag 63)
+  const fields = parseQrisTLV(staticQris).filter((f) => f.tag !== '63');
 
-  // 2. Potong checksum CRC16 lama (4 karakter di akhir Tag 63)
-  if (base.includes("6304")) {
-    base = base.substring(0, base.indexOf("6304"));
-  }
+  // 2. Ubah indikator dari Statis (11) ke Dinamis (12) di Tag 01
+  const poiIdx = fields.findIndex((f) => f.tag === '01');
+  if (poiIdx >= 0) fields[poiIdx].value = '12';
 
-  // 3. Format Tag 54 (Nominal Transaksi)
-  const amountStr = Math.round(amount).toString();
-  const tag54 = tlv("54", amountStr);
+  // 3. Hapus Tag 54 lama jika ada
+  const cleanFields = fields.filter((f) => f.tag !== '54');
 
-  // 4. Sisipkan Tag 54 tepat SEBELUM Tag 58 (Country Code 'ID')
-  let payloadWithoutCrc = "";
-  const tag58Index = base.indexOf("5802ID");
+  // 4. Sisipkan Tag 54 persis SETELAH Tag 53 (Currency 360)
+  const currencyIdx = cleanFields.findIndex((f) => f.tag === '53');
+  const amountStr = String(Math.round(amount));
 
-  if (tag58Index !== -1) {
-    payloadWithoutCrc = base.slice(0, tag58Index) + tag54 + base.slice(tag58Index) + "6304";
+  if (currencyIdx !== -1) {
+    cleanFields.splice(currencyIdx + 1, 0, { tag: '54', value: amountStr });
   } else {
-    payloadWithoutCrc = base + tag54 + "6304";
+    cleanFields.push({ tag: '54', value: amountStr });
   }
 
-  // 5. Hitung CRC16 baru dan gabungkan
-  const newCrc = crc16ccitt(payloadWithoutCrc);
-  return payloadWithoutCrc + newCrc;
+  // 5. Susun ulang payload & hitung CRC16 baru
+  let payload = cleanFields.map((f) => tlv(f.tag, f.value)).join('');
+  payload += '6304';
+  payload += crc16ccitt(payload);
+
+  return payload;
 }
 
 window.buildDynamicQris = buildDynamicQris;
