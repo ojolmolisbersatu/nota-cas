@@ -1,7 +1,5 @@
-// QRIS dinamis: menyisipkan nominal transaksi ke dalam kode QRIS statis,
-// mengikuti format EMV QR Code for Payment Systems (TLV) yang dipakai QRIS.
-// Referensi tag: 01=Point of Initiation Method, 53=Currency, 54=Transaction Amount,
-// 63=CRC. Static QRIS di bawah ini hasil decode dari gambar QRIS yang diupload.
+// QRIS Dinamis: Menyisipkan nominal transaksi ke dalam kode QRIS Statis merchant.
+// Mengikuti standar EMVCo QR Code / QRIS Spesifikasi Teknis.
 
 const QRIS_STATIC =
   "00020101021126570011ID.DANA.WWW011893600915303471271802090347127180303UMI" +

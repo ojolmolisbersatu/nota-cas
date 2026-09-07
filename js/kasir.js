@@ -13,24 +13,39 @@ function formatDateTime(d) {
   return tgl + ' · ' + jam;
 }
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 let pickedMember = null; // {id_anggota, nama}
 let lastTx = null;
 
 // ---- setup persisted fields ----
 const bizNameInput = $('biz-name');
-bizNameInput.value = localStorage.getItem(LS_KEY_NAME) || '';
-bizNameInput.addEventListener('input', () => localStorage.setItem(LS_KEY_NAME, bizNameInput.value));
+if (bizNameInput) {
+  bizNameInput.value = localStorage.getItem(LS_KEY_NAME) || '';
+  bizNameInput.addEventListener('input', () => localStorage.setItem(LS_KEY_NAME, bizNameInput.value));
+}
 
 const rateInput = $('input-rate');
-const savedRate = localStorage.getItem(LS_KEY_RATE);
-if (savedRate) rateInput.value = savedRate;
-['input', 'change', 'keyup'].forEach(ev => rateInput.addEventListener(ev, () => {
-  localStorage.setItem(LS_KEY_RATE, rateInput.value || '0');
-  updatePreview();
-}));
+if (rateInput) {
+  const savedRate = localStorage.getItem(LS_KEY_RATE);
+  if (savedRate) rateInput.value = savedRate;
+  ['input', 'change', 'keyup'].forEach(ev => rateInput.addEventListener(ev, () => {
+    localStorage.setItem(LS_KEY_RATE, rateInput.value || '0');
+    updatePreview();
+  }));
+}
 
 const kwhInput = $('input-kwh');
-['input', 'change', 'keyup'].forEach(ev => kwhInput.addEventListener(ev, updatePreview));
+if (kwhInput) {
+  ['input', 'change', 'keyup'].forEach(ev => kwhInput.addEventListener(ev, updatePreview));
+}
 
 function currentTotal() {
   const kwh = parseFloat(kwhInput.value) || 0;
@@ -38,10 +53,12 @@ function currentTotal() {
   return kwh * rate;
 }
 function updatePreview() {
-  $('preview-total').textContent = rupiah(currentTotal());
+  const totalEl = $('preview-total');
+  if (totalEl) totalEl.textContent = rupiah(currentTotal());
 }
 function tickClock() {
-  $('preview-datetime').textContent = formatDateTime(new Date());
+  const dtEl = $('preview-datetime');
+  if (dtEl) dtEl.textContent = formatDateTime(new Date());
 }
 tickClock();
 setInterval(tickClock, 15000);
@@ -49,11 +66,14 @@ updatePreview();
 
 // ---- member search ----
 let searchTimer;
-$('input-search').addEventListener('input', (e) => {
-  clearTimeout(searchTimer);
-  const q = e.target.value;
-  searchTimer = setTimeout(() => searchMember(q), 300);
-});
+const searchInput = $('input-search');
+if (searchInput) {
+  searchInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    const q = e.target.value;
+    searchTimer = setTimeout(() => searchMember(q), 300);
+  });
+}
 
 async function searchMember(q) {
   const box = $('member-results');
@@ -129,46 +149,49 @@ async function renderPickedMember() {
 }
 
 // ---- create nota ----
-$('btn-create').addEventListener('click', async () => {
-  const btn = $('btn-create');
-  const kwh = parseFloat(kwhInput.value);
-  const rate = parseFloat(rateInput.value);
+const btnCreate = $('btn-create');
+if (btnCreate) {
+  btnCreate.addEventListener('click', async () => {
+    const btn = $('btn-create');
+    const kwh = parseFloat(kwhInput.value);
+    const rate = parseFloat(rateInput.value);
 
-  if (!pickedMember) { toast('Pilih member dulu dari pencarian'); return; }
-  if (!kwh || kwh <= 0) { toast('Isi jumlah pemakaian (kWh)'); kwhInput.focus(); return; }
-  if (!rate || rate <= 0) { toast('Tarif jasa belum diisi'); rateInput.focus(); return; }
+    if (!pickedMember) { toast('Pilih member dulu dari pencarian'); return; }
+    if (!kwh || kwh <= 0) { toast('Isi jumlah pemakaian (kWh)'); kwhInput.focus(); return; }
+    if (!rate || rate <= 0) { toast('Tarif jasa belum diisi'); rateInput.focus(); return; }
 
-  const bizName = bizNameInput.value.trim() || 'Nama Usaha';
-  const total = kwh * rate;
+    const bizName = bizNameInput.value.trim() || 'Nama Usaha';
+    const total = kwh * rate;
 
-  btn.disabled = true;
-  btn.textContent = 'Menyimpan...';
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
 
-  const { data, error } = await supabaseClient
-    .from('charge_transactions')
-    .insert({
-      member_id: pickedMember.id_anggota,
-      member_nama: pickedMember.nama,
-      kwh,
-      tarif: rate,
-      total,
-      business_name: bizName
-    })
-    .select()
-    .single();
+    const { data, error } = await supabaseClient
+      .from('charge_transactions')
+      .insert({
+        member_id: pickedMember.id_anggota,
+        member_nama: pickedMember.nama,
+        kwh,
+        tarif: rate,
+        total,
+        business_name: bizName
+      })
+      .select()
+      .single();
 
-  btn.disabled = false;
-  btn.textContent = 'Buat Nota';
+    btn.disabled = false;
+    btn.textContent = 'Buat Nota';
 
-  if (error) {
-    toast('Gagal menyimpan nota: ' + error.message);
-    return;
-  }
+    if (error) {
+      toast('Gagal menyimpan nota: ' + error.message);
+      return;
+    }
 
-  lastTx = data;
-  renderReceipt(data);
-  showView('receipt');
-});
+    lastTx = data;
+    renderReceipt(data);
+    showView('receipt');
+  });
+}
 
 function renderReceipt(tx) {
   $('r-biz-name').textContent = tx.business_name || 'Nama Usaha';
@@ -184,76 +207,130 @@ function renderReceipt(tx) {
   const canvas = $('r-qris-canvas');
   const qrisBlock = document.querySelector('.qris-block');
 
-  try {
-    if (typeof QRCode === 'undefined') {
-      throw new Error('Library QRCode belum termuat (cek koneksi/CDN diblokir)');
-    }
+  // Clear existing error notice if any
+  const oldErr = qrisBlock.querySelector('.qris-error');
+  if (oldErr) oldErr.remove();
+
+  let rendered = false;
+
+  // Attempt 1: qrcode node package (npm window.QRCode with toCanvas)
+  if (typeof QRCode !== 'undefined' && typeof QRCode.toCanvas === 'function') {
     QRCode.toCanvas(canvas, dynamicPayload, { width: 220, margin: 1 }, (err) => {
-      if (err) {
-        canvas.classList.add('hidden');
-        qrisBlock.insertAdjacentHTML('beforeend', `<div class="qris-error">QR gagal dibuat: ${escapeHtml(err.message || String(err))}</div>`);
+      if (!err) {
+        canvas.classList.remove('hidden');
+        rendered = true;
+      } else {
+        console.warn('QRCode.toCanvas failed, trying QRCode.js fallback...', err);
+        fallbackQRCodeJS(dynamicPayload, canvas, qrisBlock);
       }
     });
-  } catch (e) {
-    canvas.classList.add('hidden');
-    qrisBlock.insertAdjacentHTML('beforeend', `<div class="qris-error">QR gagal dibuat: ${escapeHtml(e.message || String(e))}</div>`);
+  } else {
+    fallbackQRCodeJS(dynamicPayload, canvas, qrisBlock);
   }
 }
 
-$('btn-new').addEventListener('click', () => {
-  pickedMember = null;
-  renderPickedMember();
-  kwhInput.value = '';
-  updatePreview();
-  showView('form');
-});
+function fallbackQRCodeJS(payload, canvas, qrisBlock) {
+  // Attempt 2: qrcode.js (new QRCode(element, options))
+  if (typeof QRCode !== 'undefined' && typeof QRCode === 'function') {
+    try {
+      canvas.classList.add('hidden'); // Hide canvas, QRCode.js appends img/canvas inside container
+      let container = document.getElementById('qris-fallback-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'qris-fallback-container';
+        canvas.parentNode.insertBefore(container, canvas.nextSibling);
+      }
+      container.innerHTML = '';
+      new QRCode(container, {
+        text: payload,
+        width: 200,
+        height: 200
+      });
+      return;
+    } catch (err) {
+      console.error('QRCode.js fallback failed:', err);
+    }
+  }
 
-$('btn-view-member-history').addEventListener('click', () => {
-  if (!lastTx) return;
-  location.href = `riwayat.html?member=${encodeURIComponent(lastTx.member_id)}`;
-});
-$('btn-open-history').addEventListener('click', () => {
-  location.href = 'riwayat.html';
-});
+  // If both failed
+  canvas.classList.add('hidden');
+  qrisBlock.insertAdjacentHTML('beforeend', `<div class="qris-error" style="color:red;font-size:12px;margin-top:8px;">QR gagal dibuat: Library QRCode belum termuat (cek koneksi/CDN diblokir)</div>`);
+}
 
-$('btn-share').addEventListener('click', async () => {
-  if (!lastTx) return;
-  const btn = $('btn-share');
-  const receiptEl = document.querySelector('#view-receipt .receipt');
+const btnNew = $('btn-new');
+if (btnNew) {
+  btnNew.addEventListener('click', () => {
+    pickedMember = null;
+    renderPickedMember();
+    kwhInput.value = '';
+    updatePreview();
+    showView('form');
+  });
+}
 
-  btn.disabled = true;
-  btn.textContent = 'Menyiapkan gambar...';
+const btnViewMemHistory = $('btn-view-member-history');
+if (btnViewMemHistory) {
+  btnViewMemHistory.addEventListener('click', () => {
+    if (!lastTx) return;
+    location.href = `riwayat.html?member=${encodeURIComponent(lastTx.member_id)}`;
+  });
+}
 
-  try {
-    const canvas = await html2canvas(receiptEl, { backgroundColor: '#FBF8EE', scale: 2, useCORS: true });
-    canvas.toBlob(async (blob) => {
+const btnOpenHistory = $('btn-open-history');
+if (btnOpenHistory) {
+  btnOpenHistory.addEventListener('click', () => {
+    location.href = 'riwayat.html';
+  });
+}
+
+const btnShare = $('btn-share');
+if (btnShare) {
+  btnShare.addEventListener('click', async () => {
+    if (!lastTx) return;
+    const btn = $('btn-share');
+    const receiptEl = document.querySelector('#view-receipt .receipt');
+
+    btn.disabled = true;
+    btn.textContent = 'Menyiapkan gambar...';
+
+    if (typeof html2canvas === 'undefined') {
       btn.disabled = false;
       btn.textContent = 'Bagikan';
-      if (!blob) { toast('Gagal membuat gambar nota'); return; }
+      toast('Library html2canvas belum termuat!');
+      return;
+    }
 
-      const fileName = `nota-${padNota(lastTx.nota_number)}.png`;
-      const file = new File([blob], fileName, { type: 'image/png' });
+    try {
+      const canvas = await html2canvas(receiptEl, { backgroundColor: '#FBF8EE', scale: 2, useCORS: true });
+      canvas.toBlob(async (blob) => {
+        btn.disabled = false;
+        btn.textContent = 'Bagikan';
+        if (!blob) { toast('Gagal membuat gambar nota'); return; }
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: 'Nota Biaya Jasa Charge' });
-        } catch (e) { /* dibatalkan pengguna, tidak apa */ }
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast('Gambar nota tersimpan ke HP');
-      }
-    }, 'image/png');
-  } catch (e) {
-    btn.disabled = false;
-    btn.textContent = 'Bagikan';
-    toast('Gagal membuat gambar nota');
-  }
-});
+        const fileName = `nota-${padNota(lastTx.nota_number)}.png`;
+        const file = new File([blob], fileName, { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file], title: 'Nota Biaya Jasa Charge' });
+          } catch (e) { /* dibatalkan pengguna */ }
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast('Gambar nota tersimpan ke HP');
+        }
+      }, 'image/png');
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Bagikan';
+      toast('Gagal membuat gambar nota');
+    }
+  });
+}
 
 function showView(name) {
   $('view-form').classList.toggle('hidden', name !== 'form');
@@ -264,6 +341,7 @@ function showView(name) {
 let toastTimer = null;
 function toast(msg) {
   const el = $('toast');
+  if (!el) return;
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
@@ -271,4 +349,6 @@ function toast(msg) {
 }
 
 // ---- guard page ----
-requireAdmin();
+if (typeof requireAdmin === 'function') {
+  requireAdmin();
+}
