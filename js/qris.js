@@ -1,4 +1,4 @@
-// QRIS Merchant Semilir Semarang
+// QRIS Merchant Semilir Semarang - Clean Dynamic Builder
 const QRIS_STATIC =
   "00020101021126570011ID.DANA.WWW011893600915303471271802090347127180303UMI" +
   "51440014ID.CO.QRIS.WWW0215ID10265837741240303UMI" +
@@ -31,7 +31,7 @@ function crc16ccitt(str) {
       if ((crc & 0x8000) !== 0) {
         crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
       } else {
-        crc = (crc << 1) & 0xFFFF;
+        crc = ((crc << 1)) & 0xFFFF;
       }
     }
   }
@@ -39,25 +39,25 @@ function crc16ccitt(str) {
 }
 
 function buildDynamicQris(staticQris, amount) {
-  const fields = parseQrisTLV(staticQris).filter((f) => f.tag !== '63');
+  // 1. Parse seluruh Tag TLV & buang CRC lama (Tag 63) serta Tag 54 lama jika terbawa
+  const fields = parseQrisTLV(staticQris).filter((f) => f.tag !== '63' && f.tag !== '54');
 
-  // UBAH KE 12 (Dinamis agar nominal terbaca e-wallet)
+  // 2. WAJIB UBAH Tag 01 ke '12' (Dinamis)
   const poiIdx = fields.findIndex((f) => f.tag === '01');
   if (poiIdx >= 0) fields[poiIdx].value = '12';
 
-  const cleanFields = fields.filter((f) => f.tag !== '54');
-
-  // Sisipkan Tag 54 tepat setelah Tag 53
-  const currencyIdx = cleanFields.findIndex((f) => f.tag === '53');
+  // 3. Sisipkan Tag 54 (Nominal baru dari kasir) tepat setelah Tag 53 (Mata Uang)
+  const currencyIdx = fields.findIndex((f) => f.tag === '53');
   const amountStr = String(Math.round(amount));
 
   if (currencyIdx !== -1) {
-    cleanFields.splice(currencyIdx + 1, 0, { tag: '54', value: amountStr });
+    fields.splice(currencyIdx + 1, 0, { tag: '54', value: amountStr });
   } else {
-    cleanFields.push({ tag: '54', value: amountStr });
+    fields.push({ tag: '54', value: amountStr });
   }
 
-  let payload = cleanFields.map((f) => tlv(f.tag, f.value)).join('');
+  // 4. Susun ulang string payload dan hitung CRC16 Checksum baru
+  let payload = fields.map((f) => tlv(f.tag, f.value)).join('');
   payload += '6304';
   payload += crc16ccitt(payload);
 
