@@ -3,7 +3,6 @@ const $ = (id) => document.getElementById(id);
 const rupiah = (n) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtKwh = (n) => (Math.round(n * 100) / 100).toString() + ' kWh';
 const padNota = (n) => '#' + String(n).padStart(4, '0');
-function escapePostgrestFilter(value){return String(value).replace(/([\\%_(),])/g,'\\$1');}
 
 function formatDateTime(d) {
   const tgl = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -34,7 +33,7 @@ async function searchMember(q) {
   const { data, error } = await supabaseClient
     .from('anggota_omb_public')
     .select('*')
-    .or(`nama.ilike.%${escapePostgrestFilter(q.trim())}%,nama_panggilan.ilike.%${escapePostgrestFilter(q.trim())}%,id_anggota.ilike.%${escapePostgrestFilter(q.trim())}%`)
+    .or(`nama.ilike.%${q}%,nama_panggilan.ilike.%${q}%,id_anggota.ilike.%${q}%`)
     .limit(8);
 
   if (error) {

@@ -2,15 +2,10 @@ const $ = (id) => document.getElementById(id);
 
 const LS_KEY_RATE = 'ncm_rate';
 const LS_KEY_NAME = 'ncm_biz_name';
-const LS_KEY_QRIS_MERCHANT = 'ncm_qris_merchant';
 
 const rupiah = (n) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtKwh = (n) => (Math.round(n * 100) / 100).toString() + ' kWh';
 const padNota = (n) => '#' + String(n).padStart(4, '0');
-
-function escapePostgrestFilter(value) {
-  return String(value).replace(/([\\%_(),])/g, '\\$1');
-}
 
 function formatDateTime(d) {
   const tgl = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -66,11 +61,10 @@ async function searchMember(q) {
     box.innerHTML = '';
     return;
   }
-  const safeQ = escapePostgrestFilter(q.trim());
   const { data, error } = await supabaseClient
     .from('anggota_omb_public')
     .select('*')
-    .or(`nama.ilike.%${safeQ}%,nama_panggilan.ilike.%${safeQ}%,id_anggota.ilike.%${safeQ}%`)
+    .or(`nama.ilike.%${q}%,nama_panggilan.ilike.%${q}%,id_anggota.ilike.%${q}%`)
     .limit(8);
 
   if (error) {
@@ -146,9 +140,6 @@ $('btn-create').addEventListener('click', async () => {
 
   const bizName = bizNameInput.value.trim() || 'Nama Usaha';
   const total = kwh * rate;
-  let qrisPayload = null;
-  try { qrisPayload = buildDynamicQris(QRIS_STATIC, total); }
-  catch (e) { toast('QRIS tidak dapat disiapkan: ' + e.message); return; }
 
   btn.disabled = true;
   btn.textContent = 'Menyimpan...';
@@ -161,9 +152,7 @@ $('btn-create').addEventListener('click', async () => {
       kwh,
       tarif: rate,
       total,
-      business_name: bizName,
-      payment_status: 'UNPAID',
-      qris_payload: qrisPayload
+      business_name: bizName
     })
     .select()
     .single();
@@ -191,31 +180,23 @@ function renderReceipt(tx) {
   $('r-total').textContent = rupiah(tx.total);
   $('r-qris-amount').textContent = rupiah(tx.total);
 
+  const dynamicPayload = buildDynamicQris(QRIS_STATIC, tx.total);
   const canvas = $('r-qris-canvas');
   const qrisBlock = document.querySelector('.qris-block');
-  canvas.classList.remove('hidden');
-  qrisBlock.querySelectorAll('.qris-error').forEach(el => el.remove());
-  const ctx = canvas.getContext('2d');
-  if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   try {
-    const dynamicPayload = buildDynamicQris(QRIS_STATIC, tx.total);
-    const info = inspectQris(dynamicPayload);
-    if (!info.crcValid || info.amount !== Math.round(Number(tx.total)) || info.poi !== '12') {
-      throw new Error('Validasi payload QRIS gagal (nominal/CRC/POI tidak sesuai).');
-    }
-    if (typeof QRCode === 'undefined' || typeof QRCode.toCanvas !== 'function') {
-      throw new Error('Library QRCode tidak tersedia. Coba jaringan lain atau pastikan CDN tidak diblokir.');
+    if (typeof QRCode === 'undefined') {
+      throw new Error('Library QRCode belum termuat (cek koneksi/CDN diblokir)');
     }
     QRCode.toCanvas(canvas, dynamicPayload, { width: 220, margin: 1 }, (err) => {
       if (err) {
         canvas.classList.add('hidden');
-        qrisBlock.insertAdjacentHTML('beforeend', `<div class=\"qris-error\">QR gagal dibuat: ${escapeHtml(err.message || String(err))}</div>`);
+        qrisBlock.insertAdjacentHTML('beforeend', `<div class="qris-error">QR gagal dibuat: ${escapeHtml(err.message || String(err))}</div>`);
       }
     });
   } catch (e) {
     canvas.classList.add('hidden');
-    qrisBlock.insertAdjacentHTML('beforeend', `<div class=\"qris-error\">QR gagal dibuat: ${escapeHtml(e.message || String(e))}</div>`);
+    qrisBlock.insertAdjacentHTML('beforeend', `<div class="qris-error">QR gagal dibuat: ${escapeHtml(e.message || String(e))}</div>`);
   }
 }
 
@@ -244,35 +225,33 @@ $('btn-share').addEventListener('click', async () => {
   btn.textContent = 'Menyiapkan gambar...';
 
   try {
-    if (typeof html2canvas !== 'function') throw new Error('Library gambar nota belum tersedia.');
     const canvas = await html2canvas(receiptEl, { backgroundColor: '#FBF8EE', scale: 2, useCORS: true });
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-    btn.disabled = false;
-    btn.textContent = 'Bagikan';
-    if (!blob) { toast('Gagal membuat gambar nota'); return; }
+    canvas.toBlob(async (blob) => {
+      btn.disabled = false;
+      btn.textContent = 'Bagikan';
+      if (!blob) { toast('Gagal membuat gambar nota'); return; }
 
-    const fileName = `nota-${padNota(lastTx.nota_number)}.png`;
-    const file = new File([blob], fileName, { type: 'image/png' });
+      const fileName = `nota-${padNota(lastTx.nota_number)}.png`;
+      const file = new File([blob], fileName, { type: 'image/png' });
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: 'Nota Biaya Jasa Charge' });
-      } catch (e) { /* dibatalkan pengguna, tidak apa */ }
-    } else {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      toast('Gambar nota tersimpan ke HP');
-    }
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'Nota Biaya Jasa Charge' });
+        } catch (e) { /* dibatalkan pengguna, tidak apa */ }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('Gambar nota tersimpan ke HP');
+      }
+    }, 'image/png');
   } catch (e) {
     btn.disabled = false;
     btn.textContent = 'Bagikan';
-    toast(e.message || 'Gagal membuat gambar nota');
+    toast('Gagal membuat gambar nota');
   }
 });
 
