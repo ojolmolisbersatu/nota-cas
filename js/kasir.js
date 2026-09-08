@@ -1,7 +1,7 @@
 const $ = (id) => document.getElementById(id);
 
 const LS_KEY_RATE = 'ncm_rate';
-const LS_KEY_NAME = 'ncm_biz_name';
+const FIXED_BIZ_NAME = 'OMB Charge';
 
 const rupiah = (n) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtKwh = (n) => (Math.round(n * 100) / 100).toString() + ' kWh';
@@ -17,10 +17,6 @@ let pickedMember = null; // {id_anggota, nama}
 let lastTx = null;
 
 // ---- setup persisted fields ----
-const bizNameInput = $('biz-name');
-bizNameInput.value = localStorage.getItem(LS_KEY_NAME) || '';
-bizNameInput.addEventListener('input', () => localStorage.setItem(LS_KEY_NAME, bizNameInput.value));
-
 const rateInput = $('input-rate');
 const savedRate = localStorage.getItem(LS_KEY_RATE);
 if (savedRate) rateInput.value = savedRate;
@@ -138,7 +134,6 @@ $('btn-create').addEventListener('click', async () => {
   if (!kwh || kwh <= 0) { toast('Isi jumlah pemakaian (kWh)'); kwhInput.focus(); return; }
   if (!rate || rate <= 0) { toast('Tarif jasa belum diisi'); rateInput.focus(); return; }
 
-  const bizName = bizNameInput.value.trim() || 'Nama Usaha';
   const total = kwh * rate;
 
   btn.disabled = true;
@@ -152,7 +147,7 @@ $('btn-create').addEventListener('click', async () => {
       kwh,
       tarif: rate,
       total,
-      business_name: bizName
+      business_name: FIXED_BIZ_NAME
     })
     .select()
     .single();
@@ -171,7 +166,7 @@ $('btn-create').addEventListener('click', async () => {
 });
 
 function renderReceipt(tx) {
-  $('r-biz-name').textContent = tx.business_name || 'Nama Usaha';
+  $('r-biz-name').textContent = tx.business_name || FIXED_BIZ_NAME;
   $('r-nota').textContent = padNota(tx.nota_number);
   $('r-datetime').textContent = formatDateTime(new Date(tx.created_at));
   $('r-customer').textContent = `${tx.member_nama} (${tx.member_id})`;
