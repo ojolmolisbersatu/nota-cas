@@ -21,8 +21,8 @@
   <div id="view-form">
     <div class="receipt">
       <div class="biz-row">
-        <input id="biz-name" class="biz-name" placeholder="Nama Usaha" maxlength="40">
-        <div class="biz-sub">Nota Biaya Jasa Charge</div>
+        <input id="biz-name" class="biz-name" placeholder="OMB Charge" maxlength="40">
+        <div class="biz-sub">Jasa Charge by Semilir Semarang</div>
       </div>
 
       <hr class="dashed">
@@ -74,8 +74,8 @@
   <div id="view-receipt" class="hidden">
     <div class="receipt">
       <div class="biz-row">
-        <div class="biz-name" id="r-biz-name" style="cursor:default;">Nama Usaha</div>
-        <div class="biz-sub">Nota Biaya Jasa Charge</div>
+        <div class="biz-name" id="r-biz-name" style="cursor:default;">OMB Charge</div>
+        <div class="biz-sub">Jasa Charge by Semilir Semarang</div>
       </div>
 
       <hr class="dashed">
@@ -125,7 +125,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<!-- PERBAIKAN: Memanggil library QR code dari file lokal js/qrcode.min.js -->
+<script src="js/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 <script src="js/auth.js"></script>
