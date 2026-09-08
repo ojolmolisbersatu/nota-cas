@@ -180,24 +180,40 @@ function renderReceipt(tx) {
   $('r-total').textContent = rupiah(tx.total);
   $('r-qris-amount').textContent = rupiah(tx.total);
 
+  // 1. Buat string payload QRIS Dinamis
   const dynamicPayload = buildDynamicQris(QRIS_STATIC, tx.total);
-  const canvas = $('r-qris-canvas');
+  
   const qrisBlock = document.querySelector('.qris-block');
 
-  try {
-    if (typeof QRCode === 'undefined') {
-      throw new Error('Library QRCode belum termuat (cek koneksi/CDN diblokir)');
-    }
-    QRCode.toCanvas(canvas, dynamicPayload, { width: 220, margin: 1 }, (err) => {
-      if (err) {
-        canvas.classList.add('hidden');
-        qrisBlock.insertAdjacentHTML('beforeend', `<div class="qris-error">QR gagal dibuat: ${escapeHtml(err.message || String(err))}</div>`);
-      }
-    });
-  } catch (e) {
-    canvas.classList.add('hidden');
-    qrisBlock.insertAdjacentHTML('beforeend', `<div class="qris-error">QR gagal dibuat: ${escapeHtml(e.message || String(e))}</div>`);
+  // Bersihkan pesan error jika ada
+  qrisBlock.querySelectorAll('.qris-error').forEach((el) => el.remove());
+
+  // 2. Sembunyikan canvas bawaan yang bikin gambar rentan buram
+  const oldCanvas = $('r-qris-canvas');
+  if (oldCanvas) {
+    oldCanvas.style.display = 'none';
   }
+
+  // 3. Gunakan elemen <img> untuk menarik QR dari Server API (Seperti buatan AI)
+  let qrImg = document.getElementById('r-qris-img');
+  if (!qrImg) {
+    qrImg = document.createElement('img');
+    qrImg.id = 'r-qris-img';
+    
+    // Wajib anonymous agar fitur "Bagikan" (html2canvas) tidak error CORS
+    qrImg.crossOrigin = 'anonymous'; 
+    qrImg.style.width = '220px';
+    qrImg.style.height = '220px';
+    qrImg.style.display = 'block';
+    qrImg.style.margin = '0 auto';
+    
+    // Masukkan gambar ke dalam blok QRIS (di atas elemen lain jika ada)
+    qrisBlock.insertBefore(qrImg, qrisBlock.firstChild);
+  }
+
+  // 4. Request gambar QR beresolusi tinggi langsung dari API (ukuran 300x300 px)
+  const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=2&data=${encodeURIComponent(dynamicPayload)}`;
+  qrImg.src = apiUrl;
 }
 
 $('btn-new').addEventListener('click', () => {
