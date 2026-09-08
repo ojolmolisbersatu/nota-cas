@@ -1,59 +1,39 @@
-# Nota Charge App V2
+# Nota Charge Motor
 
-Web app kasir nota biaya jasa charge motor listrik, siap di-deploy ke GitHub Pages.
-Versi V2 memperbaiki ketergantungan CDN dengan fallback beberapa CDN, memperketat
-validasi payload QRIS, membersihkan file debug/temporary, dan memperbaiki proses
-share nota.
+Web app kasir nota biaya jasa charge motor listrik. Pakai project Supabase yang sama
+dengan **OMB Absensi** (data member `anggota_omb_public`, login admin yang sama).
 
 ## Struktur
-- `index.html` — redirect login/kasir
-- `login.html` — login operator admin
-- `kasir.html` — buat nota, QR, dan share
-- `riwayat.html` — riwayat member
-- `supabase.js` — URL + anon key Supabase
-- `js/vendor-loader.js` — fallback CDN untuk Supabase, QRCode, html2canvas
-- `js/qris.js` — builder + validator TLV/CRC QRIS
-- `js/kasir.js` — transaksi dan share nota
-- `js/riwayat.js` — riwayat member
-- `supabase-charge-transactions.sql` — setup tabel awal
-- `supabase-charge-transactions-v2.sql` — migration V2
+- `login.html` — login operator (akun admin OMB yang sama)
+- `kasir.html` — buat nota: cari member, isi kWh & tarif, simpan, bagikan
+- `riwayat.html` — cari member, lihat ringkasan & daftar semua transaksi charge-nya
+- `supabase.js` — konfigurasi client Supabase (URL + anon key, sudah diisi)
+- `supabase-charge-transactions.sql` — script tabel baru + RLS, **wajib dijalankan dulu**
 
-## Deploy GitHub Pages
-1. Upload seluruh isi folder ini ke repository GitHub.
-2. Settings → Pages → Deploy from branch → pilih branch utama + `/ (root)`.
-3. Buka URL Pages dan login dengan akun Supabase yang mempunyai
-   `app_metadata.role = admin`.
+## Setup
 
-## Supabase
-Jika tabel `charge_transactions` belum ada, jalankan:
-`supabase-charge-transactions.sql`
+1. **Jalankan SQL** — buka Supabase SQL Editor pada project yang sama dengan OMB
+   Absensi, jalankan isi `supabase-charge-transactions.sql`. Ini hanya menambah
+   tabel baru `charge_transactions`, tidak mengubah tabel yang sudah ada.
+2. **Deploy** — upload semua file ke repo GitHub baru, aktifkan GitHub Pages
+   (branch utama, root folder), sama seperti OMB Absensi.
+3. **Login** — buka `index.html`, login pakai akun admin OMB yang sudah ada
+   (role `admin` di `app_metadata`). Tidak perlu bikin akun baru.
 
-Jika tabel versi lama sudah ada, jalankan:
-`supabase-charge-transactions-v2.sql`
+## Alur pemakaian
+1. Operator login di `login.html`.
+2. Di `kasir.html`: cari & pilih member (nama/ID), isi jumlah pemakaian (kWh) dan
+   tarif jasa (default Rp 2.000/kWh, bisa diubah). Saat member dipilih, langsung
+   muncul ringkasan riwayat singkat (sudah berapa kali & total kWh).
+3. Klik **Buat Nota** → nomor nota otomatis (increment dari database, konsisten
+   walau dipakai dari HP berbeda), nota tampil siap dibagikan lewat tombol **Bagikan**.
+4. **Lihat Riwayat Member Ini** dari nota, atau **Cari Riwayat Member** dari halaman
+   kasir, untuk buka `riwayat.html` — menampilkan ringkasan total & daftar lengkap
+   semua transaksi charge member tersebut.
 
-Jangan pernah memasukkan `service_role` key ke `supabase.js`.
-
-## QRIS — penting
-V2 membuat payload QR berdasarkan QRIS statis yang dikonfigurasi, mengubah
-Point of Initiation Method menjadi `12`, memasukkan nominal pada Tag 54,
-dan menghitung ulang CRC. Ini **bukan** API Dynamic QRIS resmi dari PJP/payment
-gateway dan tidak menjamin transaksi akan diterima oleh semua aplikasi pembayaran.
-Untuk produksi, gunakan Dynamic QRIS dari PJP/acquirer/payment gateway dan webhook.
-
-V2 juga memvalidasi nominal, POI, dan CRC sebelum QR digambar.
-
-## CDN
-Aplikasi tidak bergantung pada satu CDN saja. `js/vendor-loader.js` mencoba
-beberapa sumber untuk library frontend. Supabase tetap memerlukan koneksi internet
-karena database/auth berada di cloud.
-
-## Catatan transaksi
-- Nomor nota dibuat oleh PostgreSQL identity sehingga aman dipakai dari beberapa perangkat.
-- Tidak ada fitur edit/hapus nota dari UI.
-- Status pembayaran V2 disiapkan di database, tetapi belum otomatis berubah menjadi
-  `PAID` karena belum terhubung webhook payment gateway.
-
-## Catatan V2
-`payment_status` disimpan sebagai `UNPAID` saat nota dibuat. V2 belum otomatis
-mengubahnya menjadi `PAID`; itu baru aman dilakukan setelah Dynamic QRIS resmi
-terhubung ke webhook payment provider.
+## Catatan
+- Istilah di nota sengaja pakai "biaya jasa" / "tarif jasa", bukan "harga kWh/listrik"
+  — kWh hanya ditampilkan sebagai keterangan dasar hitung.
+- Nota tidak bisa diedit/dihapus dari aplikasi (seperti nota fisik). Kalau perlu
+  koreksi data, lakukan manual lewat Supabase SQL Editor.
+- Nama usaha di header nota tersimpan per-perangkat (localStorage), bukan di database.
