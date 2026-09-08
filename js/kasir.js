@@ -166,7 +166,10 @@ $('btn-create').addEventListener('click', async () => {
 });
 
 function renderReceipt(tx) {
-  $('r-biz-name').textContent = tx.business_name || FIXED_BIZ_NAME;
+  const bizNameEl = $('r-biz-name');
+  if (bizNameEl) {
+    bizNameEl.textContent = tx.business_name || FIXED_BIZ_NAME;
+  }
   $('r-nota').textContent = padNota(tx.nota_number);
   $('r-datetime').textContent = formatDateTime(new Date(tx.created_at));
   $('r-customer').textContent = `${tx.member_nama} (${tx.member_id})`;
@@ -189,24 +192,22 @@ function renderReceipt(tx) {
     oldCanvas.style.display = 'none';
   }
 
-  // 3. Gunakan elemen <img> untuk menarik QR dari Server API (Seperti buatan AI)
+  // 3. Gunakan elemen <img> untuk menarik QR dari Server API
   let qrImg = document.getElementById('r-qris-img');
   if (!qrImg) {
     qrImg = document.createElement('img');
     qrImg.id = 'r-qris-img';
     
-    // Wajib anonymous agar fitur "Bagikan" (html2canvas) tidak error CORS
     qrImg.crossOrigin = 'anonymous'; 
     qrImg.style.width = '220px';
     qrImg.style.height = '220px';
     qrImg.style.display = 'block';
     qrImg.style.margin = '0 auto';
     
-    // Masukkan gambar ke dalam blok QRIS (di atas elemen lain jika ada)
     qrisBlock.insertBefore(qrImg, qrisBlock.firstChild);
   }
 
-  // 4. Request gambar QR beresolusi tinggi langsung dari API (ukuran 300x300 px)
+  // 4. Request gambar QR beresolusi tinggi langsung dari API
   const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=2&data=${encodeURIComponent(dynamicPayload)}`;
   qrImg.src = apiUrl;
 }
@@ -248,7 +249,7 @@ $('btn-share').addEventListener('click', async () => {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({ files: [file], title: 'Nota Biaya Jasa Charge' });
-        } catch (e) { /* dibatalkan pengguna, tidak apa */ }
+        } catch (e) { /* dibatalkan */ }
       } else {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
