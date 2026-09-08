@@ -14,12 +14,20 @@ create table if not exists public.charge_transactions (
   tarif numeric(12,2) not null check (tarif > 0),
   total numeric(14,2) not null,
   business_name text,
+  payment_status text not null default 'UNPAID' check (payment_status in ('UNPAID','PAID','EXPIRED','CANCELLED')),
+  payment_method text,
+  payment_reference text,
+  qris_payload text,
+  qris_expires_at timestamptz,
+  paid_at timestamptz,
   created_by uuid references auth.users(id) default auth.uid(),
   created_at timestamptz not null default now()
 );
 
 create index if not exists idx_charge_transactions_member
   on public.charge_transactions (member_id);
+create index if not exists idx_charge_transactions_payment_status
+  on public.charge_transactions (payment_status);
 
 alter table public.charge_transactions enable row level security;
 
