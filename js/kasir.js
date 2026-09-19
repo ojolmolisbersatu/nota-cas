@@ -1,10 +1,11 @@
 const $ = (id) => document.getElementById(id);
 
 const LS_KEY_RATE = 'ncm_rate';
-const FIXED_BIZ_NAME = 'OMB Charge';
+const FIXED_BIZ_NAME = 'OMBC';
 
 const rupiah = (n) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtKwh = (n) => (Math.round(n * 100) / 100).toString() + ' kWh';
+const fmtPoin = (n) => (Math.round(n * 100) / 100).toString() + ' Poin';
 const padNota = (n) => '#' + String(n).padStart(4, '0');
 
 function formatDateTime(d) {
@@ -173,8 +174,7 @@ function renderReceipt(tx) {
   $('r-nota').textContent = padNota(tx.nota_number);
   $('r-datetime').textContent = formatDateTime(new Date(tx.created_at));
   $('r-customer').textContent = `${tx.member_nama} (${tx.member_id})`;
-  $('r-kwh').textContent = fmtKwh(tx.kwh);
-  $('r-rate').textContent = rupiah(tx.tarif);
+  $('r-kwh').textContent = fmtPoin(tx.kwh);
   $('r-total').textContent = rupiah(tx.total);
   $('r-qris-amount').textContent = rupiah(tx.total);
 
@@ -248,7 +248,7 @@ $('btn-share').addEventListener('click', async () => {
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
-          await navigator.share({ files: [file], title: 'Nota Biaya Jasa Charge' });
+          await navigator.share({ files: [file], title: 'Nota OMBC' });
         } catch (e) { /* dibatalkan */ }
       } else {
         const url = URL.createObjectURL(blob);
